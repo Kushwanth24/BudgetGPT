@@ -8,7 +8,7 @@ from app.services.group_service import (
 )
 from app.models.group import Group
 from app.utils.validators import require_json
-from app.utils.response import success_response
+from app.utils.responses import success_response
 
 group_bp = Blueprint("groups", __name__, url_prefix="/groups")
 

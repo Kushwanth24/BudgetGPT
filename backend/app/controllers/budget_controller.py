@@ -6,7 +6,7 @@ from app.services.budget_service import (
     monthly_summary,
 )
 from app.utils.validators import require_json
-from app.utils.response import success_response
+from app.utils.responses import success_response
 
 budget_bp = Blueprint("budgets", __name__, url_prefix="/budgets")
 

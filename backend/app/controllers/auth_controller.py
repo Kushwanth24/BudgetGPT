@@ -13,7 +13,7 @@ from app.services.auth_service import (
 from app.models.user import User
 from app.utils.validators import require_json
 from app.utils.errors import AppError
-from app.utils.response import success_response
+from app.utils.responses import success_response
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 

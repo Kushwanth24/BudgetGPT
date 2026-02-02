@@ -6,7 +6,7 @@ from app.services.category_service import (
     list_categories,
 )
 from app.utils.validators import require_json
-from app.utils.response import success_response
+from app.utils.responses import success_response
 
 category_bp = Blueprint("categories", __name__, url_prefix="/categories")
 

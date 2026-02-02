@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app
 
-from app.utils.response import success_response
+from app.utils.responses import success_response
 
 health_bp = Blueprint("health", __name__, url_prefix="/health")
 

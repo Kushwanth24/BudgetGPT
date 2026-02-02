@@ -10,7 +10,7 @@ from app.services.expense_service import (
 )
 from app.services.balance_service import compute_group_settlements
 from app.utils.validators import require_json
-from app.utils.response import success_response
+from app.utils.responses import success_response
 
 expense_bp = Blueprint("expenses", __name__, url_prefix="/groups/<int:group_id>")
 
