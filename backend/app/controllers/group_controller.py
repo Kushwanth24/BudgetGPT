@@ -25,15 +25,30 @@ def _group_to_dict(group: Group):
 @group_bp.get("")
 @jwt_required()
 def list_groups():
+    print("🔥 HIT /groups controller")
     user_id = int(get_jwt_identity())
-    groups = list_groups_for_user(user_id)
+
+    rows = list_groups_for_user(user_id)
+    print("ROWS =", rows)
 
     return success_response(
         {
-            "groups": [_group_to_dict(g) for g in groups]
+            "groups": [
+                {
+                    "id": row["group"].id,
+                    "name": row["group"].name,
+                    "created_by_user_id": row["group"].created_by_user_id,
+                    "created_at": row["group"].created_at.isoformat(),
+                    "member_count": row["member_count"],
+                }
+                for row in rows
+            ]
         },
         status=200,
     )
+
+
+
 
 
 @group_bp.post("")

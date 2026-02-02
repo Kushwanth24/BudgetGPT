@@ -34,12 +34,20 @@ def compute_group_settlements(group_id: int, requester_user_id: int):
         net[e.paid_by_user_id] += Decimal(str(e.amount))
 
     # Sum amounts owed
-    splits = ExpenseSplit.query.filter(
-        ExpenseSplit.expense_id.in_(expense_ids)
-    ).all()
+    splits = (
+    ExpenseSplit.query
+    .filter(ExpenseSplit.expense_id.in_(expense_ids))
+    .filter(ExpenseSplit.user_id.in_(member_ids))
+    .all()
+)
+
 
     for s in splits:
+        if s.user_id not in net:
+            # Ignore splits for users no longer in group
+            continue
         net[s.user_id] -= Decimal(str(s.amount_owed))
+
 
     # Separate creditors (positive) and debtors (negative)
     creditors = [(uid, amt) for uid, amt in net.items() if amt > ZERO]
