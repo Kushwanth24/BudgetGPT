@@ -3,27 +3,48 @@ from app.models.category import Category
 from app.utils.errors import AppError
 
 
+def _normalize_name(name: str) -> str:
+    return (name or "").strip()
+
+
 def create_category(user_id: int, name: str) -> Category:
-    name = (name or "").strip()
-    if not name:
+    name_norm = _normalize_name(name)
+    if not name_norm:
         raise AppError("Category name is required", 400)
 
-    existing = Category.query.filter_by(user_id=user_id, name=name).first()
+    existing = Category.query.filter_by(
+        user_id=user_id,
+        name=name_norm,
+    ).first()
+
     if existing:
         return existing
 
-    c = Category(user_id=user_id, name=name)
-    db.session.add(c)
+    category = Category(
+        user_id=user_id,
+        name=name_norm,
+    )
+    db.session.add(category)
     db.session.commit()
-    return c
+    return category
 
 
 def list_categories(user_id: int):
-    return Category.query.filter_by(user_id=user_id).order_by(Category.name.asc()).all()
+    return (
+        Category.query
+        .filter_by(user_id=user_id)
+        .order_by(Category.name.asc())
+        .all()
+    )
 
 
 def require_category_owned_by_user(user_id: int, category_id: int) -> Category:
-    c = Category.query.filter_by(id=category_id, user_id=user_id).first()
-    if not c:
+    category = Category.query.filter_by(
+        id=category_id,
+        user_id=user_id,
+    ).first()
+
+    if not category:
         raise AppError("Category not found", 404)
-    return c
+
+    return category

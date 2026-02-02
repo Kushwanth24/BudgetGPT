@@ -7,15 +7,21 @@ from app.models.expense import Expense
 from app.models.expense_split import ExpenseSplit
 from app.services.group_service import require_membership
 
+ZERO = Decimal("0.00")
+
 
 def compute_group_settlements(group_id: int, requester_user_id: int):
+    # Ensure requester belongs to the group
     require_membership(group_id, requester_user_id)
 
     members = GroupMember.query.filter_by(group_id=group_id).all()
     member_ids = [m.user_id for m in members]
 
-    # Net = paid - owed
-    net = {uid: Decimal("0.00") for uid in member_ids}
+    if not member_ids:
+        return []
+
+    # Net balance per user: paid - owed
+    net = {uid: ZERO for uid in member_ids}
 
     expenses = Expense.query.filter_by(group_id=group_id).all()
     if not expenses:
@@ -23,45 +29,56 @@ def compute_group_settlements(group_id: int, requester_user_id: int):
 
     expense_ids = [e.id for e in expenses]
 
-    # Sum paid
+    # Sum amounts paid
     for e in expenses:
-        net[e.paid_by_user_id] = net.get(e.paid_by_user_id, Decimal("0.00")) + Decimal(str(e.amount))
+        net[e.paid_by_user_id] += Decimal(str(e.amount))
 
-    # Sum owed
-    splits = ExpenseSplit.query.filter(ExpenseSplit.expense_id.in_(expense_ids)).all()
+    # Sum amounts owed
+    splits = ExpenseSplit.query.filter(
+        ExpenseSplit.expense_id.in_(expense_ids)
+    ).all()
+
     for s in splits:
-        net[s.user_id] = net.get(s.user_id, Decimal("0.00")) - Decimal(str(s.amount_owed))
+        net[s.user_id] -= Decimal(str(s.amount_owed))
 
-    # Separate creditors/debtors
-    creditors = [(uid, amt) for uid, amt in net.items() if amt > 0]
-    debtors = [(uid, -amt) for uid, amt in net.items() if amt < 0]  # store positive debt
+    # Separate creditors (positive) and debtors (negative)
+    creditors = [(uid, amt) for uid, amt in net.items() if amt > ZERO]
+    debtors = [(uid, -amt) for uid, amt in net.items() if amt < ZERO]  # store positive debt
 
-    # Greedy matching
     creditors.sort(key=lambda x: x[1], reverse=True)
     debtors.sort(key=lambda x: x[1], reverse=True)
 
     settlements = []
     i = j = 0
+
+    # Greedy settlement
     while i < len(debtors) and j < len(creditors):
-        d_uid, d_amt = debtors[i]
-        c_uid, c_amt = creditors[j]
+        debtor_id, debt_amt = debtors[i]
+        creditor_id, credit_amt = creditors[j]
 
-        pay = min(d_amt, c_amt)
-        if pay > 0:
-            settlements.append({"from_user_id": d_uid, "to_user_id": c_uid, "amount": float(pay)})
+        pay = min(debt_amt, credit_amt)
 
-        d_amt -= pay
-        c_amt -= pay
+        if pay > ZERO:
+            settlements.append(
+                {
+                    "from_user_id": debtor_id,
+                    "to_user_id": creditor_id,
+                    "amount": float(pay),
+                }
+            )
 
-        debtors[i] = (d_uid, d_amt)
-        creditors[j] = (c_uid, c_amt)
+        debt_amt -= pay
+        credit_amt -= pay
 
-        if debtors[i][1] == 0:
+        debtors[i] = (debtor_id, debt_amt)
+        creditors[j] = (creditor_id, credit_amt)
+
+        if debtors[i][1] == ZERO:
             i += 1
-        if creditors[j][1] == 0:
+        if creditors[j][1] == ZERO:
             j += 1
 
-    # Attach emails for convenience
+    # Attach emails for frontend / AI convenience
     users = User.query.filter(User.id.in_(member_ids)).all()
     id_to_email = {u.id: u.email for u in users}
 

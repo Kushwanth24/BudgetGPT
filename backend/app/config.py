@@ -1,19 +1,48 @@
 import os
+from datetime import timedelta
 
 
 class Config:
+    # -----------------------------
+    # App
+    # -----------------------------
     APP_NAME = os.getenv("APP_NAME", "BudgetGPT")
-    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret")
+    ENV = os.getenv("FLASK_ENV", "development")
+    DEBUG = ENV == "development"
 
-    # SQLite MVP default (relative file app.db in backend folder)
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///app.db")
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
+
+    # -----------------------------
+    # Database
+    # -----------------------------
+    # SQLite for MVP, PostgreSQL later
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL",
+        "sqlite:///app.db",
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # CORS: allow Next.js dev + prod; set FRONTEND_ORIGIN to lock down later
+    # -----------------------------
+    # JWT
+    # -----------------------------
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "jwt-secret")
+
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(
+        minutes=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MIN", "10080"))  # 7 days
+    )
+
+    JWT_TOKEN_LOCATION = ["headers"]
+    JWT_HEADER_NAME = "Authorization"
+    JWT_HEADER_TYPE = "Bearer"
+
+    # -----------------------------
+    # CORS
+    # -----------------------------
     FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000")
     CORS_ORIGINS = [FRONTEND_ORIGIN]
 
-    # JWT
-    JWT_ACCESS_TOKEN_EXPIRES_MIN = int(
-        os.getenv("JWT_ACCESS_TOKEN_EXPIRES_MIN", "10080"))  # 7 days
+    # -----------------------------
+    # Security (future-ready)
+    # -----------------------------
+    SESSION_COOKIE_SECURE = ENV == "production"
+    SESSION_COOKIE_HTTPONLY = True

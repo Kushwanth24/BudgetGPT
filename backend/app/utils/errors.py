@@ -1,13 +1,22 @@
 class AppError(Exception):
-    def __init__(self, message: str, status_code: int = 400, details=None):
-        super().__init__(message)
+    def __init__(
+        self,
+        message: str,
+        status: int = 400,
+        code: str = "BAD_REQUEST",
+        details: dict | None = None,
+    ):
         self.message = message
-        self.status_code = status_code
-        self.details = details
+        self.status = status
+        self.code = code
+        self.details = details or {}
+        super().__init__(message)
 
-
-def error_response(message: str, status_code: int = 400, details=None):
-    payload = {"error": message}
-    if details is not None:
-        payload["details"] = details
-    return payload, status_code
+    def to_dict(self):
+        return {
+            "error": {
+                "message": self.message,
+                "code": self.code,
+                "details": self.details,
+            }
+        }
