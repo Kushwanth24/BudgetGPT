@@ -11,6 +11,8 @@ from app.controllers.expense_controller import expense_bp
 from app.controllers.category_controller import category_bp
 from app.controllers.budget_controller import budget_bp
 from app.controllers.health_controller import health_bp
+from app.controllers.ai_controller import ai_bp
+
 
 
 def create_app():
@@ -39,6 +41,8 @@ def create_app():
     app.register_blueprint(category_bp)
     app.register_blueprint(budget_bp)
     app.register_blueprint(health_bp)
+    app.register_blueprint(ai_bp)
+    
 
     # -----------------------------
     # Global error handling
